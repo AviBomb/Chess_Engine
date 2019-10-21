@@ -1,21 +1,71 @@
+#Importing Dependencies for reading and writing into xlsx files
 from openpyxl import load_workbook
 wb = load_workbook(filename='final_moveset_pt1.xlsx')
 ws = wb['Sheet']
+import xlsxwriter 
+workbook = xlsxwriter.Workbook('Moves.xlsx') 
+worksheet = workbook.add_worksheet() 
 #wb1 = load_workbook(filename='final_moveset_pt2.xlsx')
 #ws1 = wb1['Sheet']
+
 moves_arr = []
 final_moves = []
 
+#Stores the stockfish file holding the weights of all the games that have been played
+move_strength=[]
+
+#Stores a 1*65 array which will be passed to the neural network the 65th entry in the array is the weight from the stockfish file the rest 64 are from the game board
+fully_processed_array = []
+
+#Stores all the moves of a perticular game within it the format of the game moves isthat of the fully processed array
+game_board = []
+
+#Variables Used to Calculate the stockfish value of the game
+game=0
+move=0
+
+#Generates the list which holds the stocfish file or all the moves' weights required by the neural network
+def move_values():
+	import csv
+	with open('stockfish.csv', 'r') as csvFile:
+	    reader = csv.reader(csvFile)
+	    for row in reader:
+	        move_strength.append(row[1].split())
+	# print(move_strength)
+	csvFile.close()
+
+#Resets the game board by storing one games values into the ecel file for further reference
+def reset():
+	move=0;
+	worksheet.write(game, 0, game_board) 
+	# workbook.close() 
+	game_board = []
+	game=game+1;
+
+#Creates a Game Board of dimension 1*65 which will be passed to the neural network the 65th entry in the array is the weight from the stockfish file the rest 64 are from the game board
+#It then Appends a Move sets final processed array to a game_board which will eventually hold all the moves of a game is reset for every new game
+def final_array():
+	fully_processed_array = []
+	for row in game_board:
+		for col in game_board[row]:
+				fully_processed_array.append(col)
+	fully_processed_array.append(movestrength[game][move])
+	move=move+1
+	game_board.append(fully_processed_array)
+
+#Reseting the board to it's intial starting position for the next games moves to be recorded
 def board_reset ():
 	all_moves=[]
 	game_board = {'a': [1,6,0,0,0,0,-6,-1],'b': [2,6,0,0,0,0,-6,-2],'c': [3,6,0,0,0,0,-6,-3],'d': [4,6,0,0,0,0,-6,-4],'e': [5,6,0,0,0,0,-6,-5],'f': [3,6,0,0,0,0,-6,-3],'g': [2,6,0,0,0,0,-6,-2],'h': [1,6,0,0,0,0,-6,-1]}
 	all_moves.append(game_board)
 	return(all_moves)
 
+#Modifying the Board based on the moves being made by the different players
 def board (games):
 	te=0
 	all_moves = board_reset ()
 	for move in games:
+		print (move)
 		if (len(move) == 2):
 			for j in range(0,2):
 				move[j]=move[j].replace('+', '')
@@ -57,10 +107,11 @@ def board (games):
 										element[key][k]=0
 										final_moves.append(element)
 
+				#Pawn Promotion without killing any other piece
 				a=list(move[j])
 				n=len(a)
-				if(a[2]=='='):
-					if(len(move[j])==4 and move[j].islower() == False):
+				if(len(move[j])==4 and move[j].islower() == False):
+					if(a[2]=='='):
 						for element in all_moves:
 							for key in element :
 								if(key==a[0]):
@@ -88,10 +139,11 @@ def board (games):
 												element[key][(int(a[1])-1)]=-1
 											final_moves.append(element)
 
+				#Pawn Promotion with killing some other piece
 				a=list(move[j])
 				n=len(a)
-				if(a[4]=='='):
-					if (len(move[j]) == 6 and move[j].islower() == False):
+				if (len(move[j]) == 6 and move[j].islower() == False):
+					if(a[4]=='='):
 						for element in all_moves:
 							for key in element :
 								if(key==a[0]):
@@ -127,6 +179,7 @@ def board (games):
 												element[key][(int(a[3])-1)]=-1
 											final_moves.append(element)
 
+				#King Side Castling 
 				if (move[j] == "O-O"):
 					for element in all_moves:
 						for key in element :
@@ -143,6 +196,7 @@ def board (games):
 								element['f'][7]=-1
 								final_moves.append(element)
 
+				#Queen Side Castling 
 				if (move[j] == "O-O-O"):
 					for element in all_moves:
 						for key in element :
@@ -273,7 +327,7 @@ def board (games):
 												r='d'
 											if (col==4):
 												r='e'
-											if (colp==5):
+											if (col==5):
 												r='f'
 											if (col==6):
 												r='g'
@@ -1003,7 +1057,7 @@ def board (games):
 												if([a[2],(int(a[3])-1)]==arr_possibilities):
 													element[key][k]=0
 													element[a[2]][(int(a[3])-1)]=-4
-					if (len(move[i]) == 5 and a[2] =='x'):
+					if (len(move[j]) == 5 and a[2] =='x'):
 						for element in all_moves:
 							for key in element :
 								for k in range (0,8):
@@ -2359,6 +2413,8 @@ def board (games):
 												if([a[2],int(a[3])]==arr_possibilities and int(a[3])==k):
 													element[key][k]=0
 													element[a[2]][int(a[3])]=7
+					print(move[j])
+					print(list(move[j]))
 					a=list(move[j])
 					if (len(move[j]) == 5 and a[2] =='x'):
 						for element in all_moves:
@@ -3598,18 +3654,43 @@ def board (games):
 					print(all_moves)
 					print(final_moves)
 
+# Main Program / Driver Porgram that executes the file
+move_values()
 
 for row in ws.rows:
 	wm=row[0].value
 	bm=row[1].value
 	re=row[2].value
-	if(type(re) != str):
-		arr = [wm,bm]
-		moves_arr.append(arr)
-	if(type(re) == str or bm == "1/2-1/2" or bm == "1-0" or bm == "0-1"):
-		arr = [wm,bm,re]
-		moves_arr.append(arr)
-		#games.append(moves_arr)
+	if(type(re) == str or bm == "1/2-1/2" or bm == "1-0" or bm == "0-1" or wm == "1/2-1/2" or wm == "1-0" or wm == "0-1"):
+		if(type(re) == str):
+			arr = [wm,bm,re]
+			moves_arr.append(arr)
+		elif(type(re) != str and (bm == "1/2-1/2" or bm == "1-0" or bm == "0-1")):
+			arr = [wm,bm]
+			moves_arr.append(arr)
+		elif(type(re) != str and (wm == "1/2-1/2" or wm == "1-0" or wm == "0-1")):
+			arr = [wm]
+			moves_arr.append(arr)
 		board(moves_arr)
 		moves_arr = []
+		# continue
 		break
+	elif(type(re) != str):
+		arr = [wm,bm]
+		moves_arr.append(arr)
+		continue
+
+# for row in ws.rows:
+# 	wm=row[0].value
+# 	bm=row[1].value
+# 	re=row[2].value
+# 	if(type(re) == str or bm == "1/2-1/2" or bm == "1-0" or bm == "0-1" or wm == "1/2-1/2" or wm == "1-0" or wm == "0-1"):
+# 		arr = [wm,bm,re]
+# 		moves_arr.append(arr)
+# 		#games.append(moves_arr)
+# 		board(moves_arr)
+# 		moves_arr = []
+# 		break
+# 	elif(type(re) != str):
+# 		arr = [wm,bm]
+# 		moves_arr.append(arr)
