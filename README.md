@@ -21,8 +21,8 @@ Pawn: 10, Knight: 500, Bishop: 500, Rook: 900, Queen: 5000, king: 50000.
 This will especially helped with the end-game. In situations where the checkmating move would be the second most probable legal move and would have a lower prediction score, the material value of the king would outweigh it. The pawn has such a low score because the network thinks well enough early-game that it will take pawns if it is the strategic move.
 I will then combine these scores to return an evaluation of the board given any potential move. I will feed this through a minimax algorithm of depth 3 (with alpha-beta pruning) and try to get a working chess engine that can checkmate an opponent!
 Possible improvements could be made by:
-    • Combining the moved from and moved to networks in a time series by using a bigram model LSTM. This might help with making the moved from and moved to decisions together, as each are currently approached independently.
-    • Improving the material evaluation by adding in the position of the material captured (capturing a pawn in the centre of the board is more advantageous than capturing it when it is on the side)
-    • Switching between using the neural network prediction score and material score instead of using both at every node. This could allow for a higher minimax search depth.
-    • Accounting for edge cases, such as: reducing the likelihood of isolating one’s own pawns, increasing the likelihood of placing a knight near the centre of the board
+* Combining the moved from and moved to networks in a time series by using a bigram model LSTM. This might help with making the moved from and moved to decisions together, as each are currently approached independently.
+* Improving the material evaluation by adding in the position of the material captured (capturing a pawn in the centre of the board is more advantageous than capturing it when it is on the side)
+* Switching between using the neural network prediction score and material score instead of using both at every node. This could allow for a higher minimax search depth.   
+* Accounting for edge cases, such as: reducing the likelihood of isolating one’s own pawns, increasing the likelihood of placing a knight near the centre of the board
 I also plan on making an chess engine with the help of Reinforcement learning and make the two face of each other to see which training model works best for making a better challenging chess engine.
